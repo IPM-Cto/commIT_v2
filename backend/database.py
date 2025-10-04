@@ -56,7 +56,7 @@ class MongoDB:
             # Configurazione connessione
             mongo_url = os.getenv("MONGO_URL", "mongodb://localhost:27017")
             db_name = os.getenv("DB_NAME", "commit")
-            
+
             # Opzioni di connessione
             client_options = {
                 'serverSelectionTimeoutMS': 5000,
@@ -65,22 +65,22 @@ class MongoDB:
                 'maxPoolSize': 50,
                 'minPoolSize': 10
             }
-            
+
             # Crea client
             self._client = AsyncIOMotorClient(mongo_url, **client_options)
-            
+
             # Test connessione
             await self._client.server_info()
             logger.info(f"✅ Connesso a MongoDB: {mongo_url}")
-            
+
             # Seleziona database
             self._database = self._client[db_name]
-            
+
             # Inizializza collezioni e indici
             await self._initialize_collections()
-            
+
             return self._database
-            
+
         except ConnectionFailure as e:
             logger.error(f"❌ Errore connessione MongoDB: {e}")
             raise
@@ -92,7 +92,7 @@ class MongoDB:
         """
         Chiude la connessione al database
         """
-        if self._client:
+        if self._client is not None:
             self._client.close()
             self._client = None
             self._database = None
@@ -102,36 +102,36 @@ class MongoDB:
         """
         Inizializza le collezioni e crea gli indici necessari
         """
-        if not self._database:
+        if self._database is None:
             return
 
         try:
             # Lista delle collezioni necessarie
             required_collections = [
                 'users',
-                'providers', 
+                'providers',
                 'bookings',
                 'chat_sessions',
                 'chat_messages',
                 'reviews',
                 'notifications'
             ]
-            
+
             # Ottieni collezioni esistenti
             existing_collections = await self._database.list_collection_names()
-            
+
             # Crea collezioni mancanti
             for collection_name in required_collections:
                 if collection_name not in existing_collections:
                     await self._database.create_collection(collection_name)
                     logger.info(f"📁 Creata collezione: {collection_name}")
-            
+
             # Crea indici
             await self._create_indexes()
-            
+
             # Inserisci dati di esempio se database vuoto
             await self._seed_initial_data()
-            
+
         except Exception as e:
             logger.error(f"❌ Errore inizializzazione collezioni: {e}")
             raise
@@ -142,7 +142,7 @@ class MongoDB:
         """
         for collection_name, indexes in MONGODB_INDEXES.items():
             collection = self._database[collection_name]
-            
+
             for index in indexes:
                 try:
                     if isinstance(index, list):
@@ -151,7 +151,7 @@ class MongoDB:
                     elif isinstance(index, tuple):
                         # Indice singolo
                         field, direction = index
-                        
+
                         # Gestisci indici speciali
                         if direction == "text":
                             await collection.create_index([(field, "text")])
@@ -164,9 +164,9 @@ class MongoDB:
                                 [(field, direction)],
                                 unique=unique
                             )
-                    
+
                     logger.info(f"📊 Indice creato per {collection_name}: {index}")
-                    
+
                 except OperationFailure as e:
                     # Indice probabilmente già esiste
                     logger.debug(f"Indice già esistente: {e}")
@@ -180,10 +180,10 @@ class MongoDB:
         try:
             # Controlla se ci sono già utenti
             users_count = await self._database.users.count_documents({})
-            
+
             if users_count == 0:
                 logger.info("🌱 Inserimento dati di esempio...")
-                
+
                 # Admin user
                 admin_user = {
                     "email": "admin@commit.it",
@@ -196,9 +196,9 @@ class MongoDB:
                     "created_at": datetime.utcnow(),
                     "updated_at": datetime.utcnow()
                 }
-                
+
                 await self._database.users.insert_one(admin_user)
-                
+
                 # Provider di esempio
                 example_providers = [
                     {
@@ -276,12 +276,12 @@ class MongoDB:
                         "updated_at": datetime.utcnow()
                     }
                 ]
-                
+
                 for provider in example_providers:
                     await self._database.providers.insert_one(provider)
-                
+
                 logger.info("✅ Dati di esempio inseriti con successo")
-                
+
         except Exception as e:
             logger.error(f"❌ Errore seed data: {e}")
 
@@ -289,7 +289,7 @@ class MongoDB:
         """
         Ottiene una collezione specifica
         """
-        if not self._database:
+        if self._database is None:
             raise RuntimeError("Database non connesso")
         return self._database[name]
 
@@ -298,7 +298,7 @@ class MongoDB:
         """
         Ritorna l'istanza del database
         """
-        if not self._database:
+        if self._database is None:
             raise RuntimeError("Database non connesso")
         return self._database
 
@@ -307,7 +307,7 @@ class MongoDB:
         """
         Ritorna il client MongoDB
         """
-        if not self._client:
+        if self._client is None:
             raise RuntimeError("Client non connesso")
         return self._client
 
@@ -321,72 +321,72 @@ class DatabaseHelper:
     """
     Classe helper per operazioni comuni sul database
     """
-    
+
     @staticmethod
     async def find_user_by_email(email: str) -> Optional[Dict[str, Any]]:
         """Trova utente per email"""
         collection = mongodb.get_collection("users")
         return await collection.find_one({"email": email})
-    
+
     @staticmethod
     async def find_user_by_auth0_id(auth0_id: str) -> Optional[Dict[str, Any]]:
         """Trova utente per Auth0 ID"""
         collection = mongodb.get_collection("users")
         return await collection.find_one({"auth0_id": auth0_id})
-    
+
     @staticmethod
     async def find_provider_by_id(provider_id: str) -> Optional[Dict[str, Any]]:
         """Trova provider per ID"""
         collection = mongodb.get_collection("providers")
         from bson import ObjectId
         return await collection.find_one({"_id": ObjectId(provider_id)})
-    
+
     @staticmethod
     async def search_providers(
-        category: Optional[ServiceCategory] = None,
-        city: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        min_rating: float = 0.0,
-        limit: int = 20,
-        skip: int = 0
+            category: Optional[ServiceCategory] = None,
+            city: Optional[str] = None,
+            tags: Optional[List[str]] = None,
+            min_rating: float = 0.0,
+            limit: int = 20,
+            skip: int = 0
     ) -> List[Dict[str, Any]]:
         """
         Ricerca avanzata provider
         """
         collection = mongodb.get_collection("providers")
-        
+
         # Costruisci query
         query = {"is_active": True}
-        
+
         if category:
             query["service_category"] = category
-        
+
         if city:
             query["address.city"] = {"$regex": city, "$options": "i"}
-        
+
         if tags:
             query["tags"] = {"$in": tags}
-        
+
         if min_rating > 0:
             query["rating"] = {"$gte": min_rating}
-        
+
         # Esegui query con ordinamento
         cursor = collection.find(query).sort("rating", -1).skip(skip).limit(limit)
-        
+
         return await cursor.to_list(length=limit)
-    
+
     @staticmethod
     async def get_user_bookings(
-        user_id: str,
-        user_type: UserType,
-        status: Optional[BookingStatus] = None,
-        limit: int = 50
+            user_id: str,
+            user_type: UserType,
+            status: Optional[BookingStatus] = None,
+            limit: int = 50
     ) -> List[Dict[str, Any]]:
         """
         Ottiene prenotazioni di un utente
         """
         collection = mongodb.get_collection("bookings")
-        
+
         # Query base
         if user_type == UserType.CUSTOMER:
             query = {"customer_id": user_id}
@@ -394,24 +394,24 @@ class DatabaseHelper:
             query = {"provider_id": user_id}
         else:
             return []
-        
+
         if status:
             query["status"] = status
-        
+
         # Esegui query
         cursor = collection.find(query).sort("booking_date", -1).limit(limit)
-        
+
         return await cursor.to_list(length=limit)
-    
+
     @staticmethod
     async def create_chat_session(user_id: str, user_type: UserType) -> str:
         """
         Crea una nuova sessione chat
         """
         import uuid
-        
+
         collection = mongodb.get_collection("chat_sessions")
-        
+
         session = {
             "user_id": user_id,
             "user_type": user_type,
@@ -422,23 +422,23 @@ class DatabaseHelper:
             "context": {},
             "ai_suggestions": []
         }
-        
+
         result = await collection.insert_one(session)
         return session["session_id"]
-    
+
     @staticmethod
     async def save_chat_message(
-        session_id: str,
-        user_id: str,
-        role: str,
-        content: str,
-        **kwargs
+            session_id: str,
+            user_id: str,
+            role: str,
+            content: str,
+            **kwargs
     ) -> str:
         """
         Salva un messaggio chat
         """
         collection = mongodb.get_collection("chat_messages")
-        
+
         message = {
             "session_id": session_id,
             "user_id": user_id,
@@ -447,16 +447,16 @@ class DatabaseHelper:
             "timestamp": datetime.utcnow(),
             **kwargs
         }
-        
+
         result = await collection.insert_one(message)
-        
+
         # Aggiorna contatore messaggi nella sessione
         sessions_collection = mongodb.get_collection("chat_sessions")
         await sessions_collection.update_one(
             {"session_id": session_id},
             {"$inc": {"message_count": 1}}
         )
-        
+
         return str(result.inserted_id)
 
 
@@ -468,17 +468,17 @@ async def test_connection():
     try:
         db = await mongodb.connect()
         logger.info("✅ Test connessione riuscito")
-        
+
         # Test query
         users_count = await db.users.count_documents({})
         providers_count = await db.providers.count_documents({})
-        
+
         logger.info(f"📊 Statistiche database:")
         logger.info(f"   - Utenti: {users_count}")
         logger.info(f"   - Provider: {providers_count}")
-        
+
         return True
-        
+
     except Exception as e:
         logger.error(f"❌ Test connessione fallito: {e}")
         return False

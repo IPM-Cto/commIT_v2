@@ -1,316 +1,306 @@
-# 🚀 commIT - Piattaforma AI per Prenotazioni e Servizi Locali
+# 🚀 commIT - Piattaforma Intelligente per Prenotazioni Locali
 
-## 📋 Panoramica
-commIT è una piattaforma web/mobile innovativa che utilizza un agente AI per connettere utenti con provider di servizi locali (ristoranti, parrucchieri, medici, negozi, ecc.). L'applicazione offre un'esperienza di prenotazione intelligente e personalizzata.
+<div align="center">
+  <img src="https://img.shields.io/badge/React-18.2-blue?style=flat-square&logo=react" />
+  <img src="https://img.shields.io/badge/FastAPI-0.109-green?style=flat-square&logo=fastapi" />
+  <img src="https://img.shields.io/badge/MongoDB-7.0-green?style=flat-square&logo=mongodb" />
+  <img src="https://img.shields.io/badge/Auth0-2.2-orange?style=flat-square&logo=auth0" />
+  <img src="https://img.shields.io/badge/OpenAI-GPT4-purple?style=flat-square&logo=openai" />
+</div>
 
-## 🌟 Caratteristiche Principali
+## 📋 Descrizione
 
-### Per Utenti (Customers)
-- 🤖 **Chat AI Intelligente**: Assistente virtuale che comprende le richieste in linguaggio naturale
-- 📅 **Prenotazioni Facili**: Prenota qualsiasi servizio con pochi click
-- 🔍 **Ricerca Avanzata**: Trova servizi per categoria, posizione, valutazione
-- ⭐ **Recensioni e Rating**: Sistema di valutazione per ogni provider
-- 📱 **Dashboard Personalizzata**: Gestisci tutte le tue prenotazioni in un unico posto
-- 🔔 **Notifiche Real-time**: Aggiornamenti istantanei sulle tue prenotazioni
+**commIT** è una piattaforma innovativa che utilizza l'intelligenza artificiale per connettere utenti e provider di servizi locali. Ristoranti, parrucchieri, medici e molto altro - tutto prenotabile con un click attraverso un assistente AI intelligente.
 
-### Per Provider di Servizi
-- 📊 **Dashboard Professionale**: Analisi dettagliate della tua attività
-- 📅 **Gestione Prenotazioni**: Accetta, rifiuta o modifica prenotazioni
-- 👥 **Gestione Clienti**: Database completo dei tuoi clienti
-- 📈 **Statistiche e Report**: Monitora le performance del tuo business
-- 💬 **Comunicazione Diretta**: Chat integrata con i clienti
-- 🎯 **Marketing Tools**: Promozioni e offerte speciali
+## ✨ Caratteristiche Principali
 
-## 🛠️ Stack Tecnologico
+- 🤖 **Assistente AI Intelligente**: Chat bot basato su OpenAI che comprende le esigenze degli utenti
+- 📅 **Prenotazioni Smart**: Sistema di prenotazione automatizzato e intuitivo
+- 👥 **Dual Interface**: Dashboard separate per clienti e provider
+- 🔐 **Autenticazione Sicura**: Integrazione con Auth0 per login sicuro
+- 📊 **Analytics Dashboard**: Statistiche dettagliate per i provider
+- 🌍 **Geolocalizzazione**: Ricerca servizi basata sulla posizione
+- 📱 **Mobile Responsive**: Ottimizzato per tutti i dispositivi
 
-### Backend
-- **Framework**: FastAPI (Python 3.9+)
-- **Database**: MongoDB
-- **Autenticazione**: Auth0 + JWT
-- **AI/ML**: OpenAI GPT-4
-- **Cache**: Redis (opzionale)
+## 🏗️ Architettura
 
-### Frontend
-- **Framework**: React 18
-- **UI Library**: Material-UI v5
-- **State Management**: Context API + React Query
-- **Routing**: React Router v6
-- **Animazioni**: Framer Motion
+```
+commIT/
+├── backend/              # API FastAPI
+│   ├── server.py        # Server principale
+│   ├── database.py      # Connessione MongoDB
+│   ├── database_schema.py # Schemi Pydantic
+│   └── ai_agent.py      # Logica AI
+├── frontend/            # React App
+│   ├── src/
+│   │   ├── pages/      # Pagine principali
+│   │   ├── components/ # Componenti riutilizzabili
+│   │   └── contexts/   # Context providers
+│   └── public/
+└── docker-compose.yml   # Orchestrazione servizi
+```
 
-## 📦 Installazione
+## 🚀 Quick Start
 
 ### Prerequisiti
-- Node.js 16+ e npm/yarn
-- Python 3.9+
-- MongoDB 5.0+
-- Account Auth0
+
+- Docker Desktop installato e in esecuzione
+- Node.js 18+ (per sviluppo locale)
+- Python 3.11+ (per sviluppo locale)
+- Account Auth0 (gratuito)
 - API Key OpenAI
 
-### Setup Rapido
+### 1. Clona il Repository
 
-#### 1. Clona il repository
 ```bash
-git clone https://github.com/yourusername/commit.git
-cd app_commIT
+git clone https://github.com/yourusername/commIT_v2.git
+cd commIT_v2
 ```
 
-#### 2. Configura il Backend
+### 2. Configura le Variabili d'Ambiente
 
+**Backend (.env)**
 ```bash
 cd backend
-
-# Crea ambiente virtuale
-python -m venv venv
-
-# Attiva ambiente virtuale
-# Windows
-venv\Scripts\activate
-# Linux/Mac
-source venv/bin/activate
-
-# Installa dipendenze
-pip install -r requirements.txt
-
-# Copia e configura .env
 cp .env.example .env
-# Modifica .env con le tue credenziali
+# Modifica .env con le tue chiavi
 ```
 
-#### 3. Configura il Frontend
-
+**Frontend (.env)**
 ```bash
-cd frontend
-
-# Installa dipendenze
-npm install
-
-# Copia e configura .env
+cd ../frontend
 cp .env.example .env
-# Modifica .env con le tue credenziali
+# Modifica .env con le tue chiavi
 ```
 
-#### 4. Configura Auth0
+### 3. Avvia l'Applicazione
+
+#### 🐳 Con Docker (Raccomandato)
+
+**Windows:**
+```bash
+start.bat
+# Scegli opzione 1
+```
+
+**Linux/Mac:**
+```bash
+chmod +x start.sh
+./start.sh
+# Scegli opzione 1
+```
+
+#### 💻 Sviluppo Locale
+
+**Windows:**
+```bash
+start.bat
+# Scegli opzione 2
+```
+
+**Linux/Mac:**
+```bash
+./start.sh
+# Scegli opzione 2
+```
+
+### 4. Accedi all'Applicazione
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+
+## 🔧 Configurazione Auth0
 
 1. Crea un account su [Auth0](https://auth0.com)
 2. Crea una nuova applicazione (Single Page Application)
-3. Configura:
+3. Configura gli URL:
    - Allowed Callback URLs: `http://localhost:3000/callback`
    - Allowed Logout URLs: `http://localhost:3000`
    - Allowed Web Origins: `http://localhost:3000`
 4. Copia Domain e Client ID nel file `.env`
 
-#### 5. Configura OpenAI
+## 🤖 Configurazione OpenAI
 
-1. Ottieni API key da [OpenAI](https://platform.openai.com)
-2. Aggiungi la key in `backend/.env`:
-   ```
-   OPENAI_API_KEY=sk-...
-   ```
+1. Crea un account su [OpenAI](https://platform.openai.com)
+2. Genera una API Key
+3. Aggiungi la chiave in `backend/.env` come `OPENAI_API_KEY`
 
-## 🚀 Avvio dell'Applicazione
+## 📊 Database MongoDB
 
-### Metodo Automatico
+Il database viene creato automaticamente al primo avvio con dati di esempio.
 
-#### Windows
-```bash
-start.bat
-```
+### Collezioni Principali:
+- **users**: Utenti registrati
+- **providers**: Provider di servizi
+- **bookings**: Prenotazioni
+- **chat_sessions**: Sessioni chat
+- **chat_messages**: Messaggi chat
+- **reviews**: Recensioni
+- **notifications**: Notifiche
 
-#### Linux/Mac
-```bash
-chmod +x start.sh
-./start.sh
-```
+## 🛠️ Sviluppo
 
-### Metodo Manuale
+### Backend
 
-#### Backend
 ```bash
 cd backend
-source venv/bin/activate  # o venv\Scripts\activate su Windows
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# oppure
+venv\Scripts\activate  # Windows
+pip install -r requirements.txt
 python server.py
 ```
 
-#### Frontend
+### Frontend
+
 ```bash
 cd frontend
+npm install
 npm start
 ```
 
-## 📱 Utilizzo
+### Testing
 
-### Prima Esecuzione
-
-1. **Accedi** a http://localhost:3000
-2. **Registrati** come Cliente o Provider
-3. **Completa il profilo** con i tuoi dati
-4. **Esplora** i servizi disponibili o gestisci la tua attività
-
-### Test Chat AI
-
-1. Clicca sull'icona chat in basso a destra
-2. Prova questi comandi:
-   - "Cerco un ristorante italiano per stasera"
-   - "Voglio prenotare un parrucchiere domani alle 15"
-   - "Mostrami i medici disponibili questa settimana"
-
-## 🗄️ Struttura Database
-
-### Collections MongoDB
-
-#### Users
-- Informazioni base utenti
-- Tipo: customer/provider/admin
-- Dati autenticazione Auth0
-
-#### Providers
-- Dettagli attività commerciali
-- Orari, servizi, prezzi
-- Posizione e contatti
-
-#### Bookings
-- Prenotazioni attive/passate
-- Stati: pending/confirmed/cancelled/completed
-- Note e richieste speciali
-
-#### Chat Sessions & Messages
-- Storico conversazioni AI
-- Context e intent analysis
-- Suggerimenti e raccomandazioni
-
-## 🔒 Sicurezza
-
-- ✅ Autenticazione OAuth 2.0 con Auth0
-- ✅ JWT tokens per API calls
-- ✅ Rate limiting su endpoints critici
-- ✅ Validazione input con Pydantic
-- ✅ CORS configurato correttamente
-- ✅ Secrets in variabili d'ambiente
-
-## 📊 API Documentation
-
-### Endpoints Principali
-
-#### Autenticazione
-- `POST /api/auth/register` - Completa registrazione
-- `GET /api/auth/me` - Dati utente corrente
-- `POST /api/auth/logout` - Logout
-
-#### Provider
-- `GET /api/providers` - Lista provider
-- `GET /api/providers/{id}` - Dettagli provider
-- `GET /api/providers/search` - Ricerca
-
-#### Prenotazioni
-- `POST /api/bookings` - Crea prenotazione
-- `GET /api/bookings` - Le mie prenotazioni
-- `PUT /api/bookings/{id}/status` - Aggiorna stato
-
-#### Chat AI
-- `POST /api/chat/start` - Inizia sessione
-- `POST /api/chat/message` - Invia messaggio
-- `GET /api/chat/history/{session_id}` - Storico chat
-
-### Documentazione Interattiva
-Disponibile su http://localhost:8000/docs (Swagger UI)
-
-## 🧪 Testing
-
-### Backend Tests
 ```bash
+# Backend
 cd backend
-pytest tests/ -v
-```
+pytest
 
-### Frontend Tests
-```bash
+# Frontend
 cd frontend
 npm test
 ```
 
-## 🚢 Deployment
+## 📱 Funzionalità Dettagliate
 
-### Docker
-```bash
-docker-compose up -d
-```
+### Per i Clienti
+- 🔍 Ricerca intelligente di servizi
+- 💬 Chat AI per assistenza personalizzata
+- 📅 Gestione prenotazioni
+- ⭐ Sistema recensioni
+- 🔔 Notifiche in tempo reale
+- ❤️ Salva provider preferiti
 
-### Heroku
-```bash
-heroku create commit-app
-heroku config:set $(cat .env)
-git push heroku main
-```
-
-### Vercel (Frontend)
-```bash
-cd frontend
-vercel --prod
-```
+### Per i Provider
+- 📊 Dashboard analytics
+- 📅 Gestione calendario e disponibilità
+- 👥 Gestione clienti
+- 💰 Tracking pagamenti
+- 📈 Statistiche performance
+- 🔧 Configurazione servizi e prezzi
 
 ## 🐛 Troubleshooting
 
-### Problemi Comuni
+### Errore Docker
+```bash
+# Verifica che Docker sia in esecuzione
+docker info
 
-#### MongoDB non si connette
-- Verifica che MongoDB sia in esecuzione
-- Controlla `MONGO_URL` in `.env`
-- Prova: `mongod --dbpath ./data`
+# Reset completo
+docker-compose down -v
+docker-compose up --build
+```
 
-#### Auth0 login fallisce
-- Verifica Domain e Client ID
-- Controlla Allowed Callbacks in Auth0 dashboard
-- Pulisci cache del browser
+### Errore MongoDB
+```bash
+# Verifica connessione
+mongosh mongodb://localhost:27017
 
-#### Chat AI non risponde
-- Verifica OPENAI_API_KEY
-- Controlla crediti OpenAI disponibili
-- Vedi logs: `tail -f backend/commit.log`
+# Reset database
+docker-compose down -v
+```
 
-## 📝 Roadmap
+### Errore Auth0
+- Verifica che Domain e Client ID siano corretti
+- Controlla che gli URL di callback siano configurati
 
-- [ ] App mobile (React Native)
-- [ ] Pagamenti integrati (Stripe)
-- [ ] Sistema di notifiche push
-- [ ] Multi-lingua (EN, ES, FR, DE)
-- [ ] Analytics avanzate per provider
-- [ ] Integrazione calendario (Google, Outlook)
-- [ ] QR code per check-in
-- [ ] Sistema di fidelizzazione
+### Errore OpenAI
+- Verifica che l'API key sia valida
+- Controlla i crediti disponibili
 
-## 🤝 Contributing
+## 📝 API Endpoints
+
+### Autenticazione
+- `POST /api/auth/register` - Registrazione utente
+- `GET /api/auth/me` - Dati utente corrente
+- `POST /api/auth/logout` - Logout
+
+### Provider
+- `GET /api/providers` - Lista provider
+- `GET /api/providers/{id}` - Dettaglio provider
+- `PUT /api/providers/{id}` - Aggiorna provider
+
+### Prenotazioni
+- `POST /api/bookings` - Crea prenotazione
+- `GET /api/bookings` - Lista prenotazioni
+- `PUT /api/bookings/{id}/status` - Aggiorna stato
+
+### Chat AI
+- `POST /api/chat/start` - Avvia sessione
+- `POST /api/chat/message` - Invia messaggio
+- `GET /api/chat/history/{session_id}` - Storico chat
+
+## 🔒 Sicurezza
+
+- ✅ Autenticazione JWT con Auth0
+- ✅ HTTPS in produzione
+- ✅ Rate limiting su API
+- ✅ Validazione input con Pydantic
+- ✅ Sanitizzazione dati
+- ✅ CORS configurato
+- ✅ Secrets management
+
+## 🚀 Deploy in Produzione
+
+### Con Docker
+
+1. Configura variabili d'ambiente di produzione
+2. Modifica `docker-compose.prod.yml`
+3. Esegui:
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Su Cloud (AWS/GCP/Azure)
+
+1. Build delle immagini Docker
+2. Push su registry
+3. Deploy con Kubernetes o ECS
+4. Configura load balancer e SSL
+
+## 👥 Contribuire
 
 1. Fork il progetto
 2. Crea un branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+3. Commit le modifiche (`git commit -m 'Add AmazingFeature'`)
 4. Push al branch (`git push origin feature/AmazingFeature`)
 5. Apri una Pull Request
 
 ## 📄 Licenza
 
-Distribuito sotto licenza MIT. Vedi `LICENSE` per maggiori informazioni.
+Questo progetto è distribuito sotto licenza MIT. Vedi `LICENSE` per maggiori informazioni.
 
-## 👥 Team
+## 🆘 Supporto
 
-- **Product Owner**: [Nome]
-- **Tech Lead**: [Nome]
-- **AI Engineer**: [Nome]
-- **Frontend Dev**: [Nome]
-- **Backend Dev**: [Nome]
-
-## 📞 Supporto
-
-- Email: support@commit.it
-- Discord: [Link Discord]
-- Documentation: [Link Docs]
+- 📧 Email: support@commit.it
+- 💬 Discord: [Join our server](https://discord.gg/commit)
+- 📖 Docs: [Documentation](https://docs.commit.it)
 
 ## 🙏 Ringraziamenti
 
-- OpenAI per l'API GPT
-- Auth0 per l'autenticazione
-- MongoDB per il database
-- Tutti i contributors open source
+- React Team
+- FastAPI Team
+- MongoDB Team
+- Auth0
+- OpenAI
+- Tutti i contributor
 
 ---
 
-**commIT** - *Prenota il tuo futuro, un click alla volta* 🚀
+<div align="center">
+  Made with ❤️ by the commIT Team
+  <br />
+  <a href="https://commit.it">www.commit.it</a>
+</div>

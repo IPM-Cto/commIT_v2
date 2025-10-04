@@ -1,113 +1,153 @@
 #!/bin/bash
 
-# Start script per commIT
-echo "======================================"
-echo "   Avvio applicazione commIT"
-echo "======================================"
-
-# Verifica prerequisiti
-echo "Controllo prerequisiti..."
-
-# Check Node.js
-if ! command -v node &> /dev/null; then
-    echo "❌ Node.js non trovato. Installa Node.js prima di continuare."
-    exit 1
-fi
-
-# Check npm
-if ! command -v npm &> /dev/null; then
-    echo "❌ npm non trovato. Installa npm prima di continuare."
-    exit 1
-fi
-
-# Check Python
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 non trovato. Installa Python 3 prima di continuare."
-    exit 1
-fi
-
-# Check MongoDB
-if ! command -v mongod &> /dev/null; then
-    echo "⚠️  MongoDB non trovato localmente. Assicurati che MongoDB sia in esecuzione."
-fi
-
-echo "✅ Prerequisiti verificati"
-
-# Installa dipendenze backend
+echo "========================================"
+echo "   commIT - Avvio Applicazione"
+echo "========================================"
 echo ""
-echo "Installazione dipendenze backend..."
-cd backend
-if [ ! -d "venv" ]; then
-    echo "Creazione ambiente virtuale Python..."
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Check if Docker is running
+if ! docker info > /dev/null 2>&1; then
+    echo -e "${RED}[ERRORE] Docker non è in esecuzione!${NC}"
+    echo "Avvia Docker e riprova."
+    exit 1
+fi
+
+# Check if .env files exist
+if [ ! -f "backend/.env" ]; then
+    echo -e "${YELLOW}[INFO] Creazione file .env per il backend...${NC}"
+    cp backend/.env.example backend/.env
+    echo -e "${YELLOW}[ATTENZIONE] Configura backend/.env con le tue chiavi API!${NC}"
+fi
+
+if [ ! -f "frontend/.env" ]; then
+    echo -e "${YELLOW}[INFO] Creazione file .env per il frontend...${NC}"
+    cp frontend/.env.example frontend/.env
+    echo -e "${YELLOW}[ATTENZIONE] Configura frontend/.env con le tue chiavi API!${NC}"
+fi
+
+# Function to show menu
+show_menu() {
+    echo ""
+    echo "[1] Avvio con Docker Compose (Raccomandato)"
+    echo "[2] Avvio locale (Development)"
+    echo "[3] Solo Backend"
+    echo "[4] Solo Frontend"
+    echo "[5] Reset Database"
+    echo "[0] Esci"
+    echo ""
+    read -p "Scegli opzione: " choice
+}
+
+# Docker Compose startup
+start_docker() {
+    echo ""
+    echo -e "${GREEN}[INFO] Avvio con Docker Compose...${NC}"
+    docker-compose up --build
+}
+
+# Local development startup
+start_local() {
+    echo ""
+    echo -e "${GREEN}[INFO] Avvio locale in modalità development...${NC}"
+    
+    # Start MongoDB
+    echo -e "${GREEN}[INFO] Avvio MongoDB...${NC}"
+    docker run -d -p 27017:27017 --name commit-mongodb mongo:7.0
+    sleep 5
+    
+    # Start Backend
+    echo -e "${GREEN}[INFO] Avvio Backend...${NC}"
+    (cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt && python server.py) &
+    sleep 5
+    
+    # Start Frontend
+    echo -e "${GREEN}[INFO] Avvio Frontend...${NC}"
+    (cd frontend && npm install && npm start) &
+    
+    echo ""
+    echo -e "${GREEN}[SUCCESS] Applicazione avviata!${NC}"
+    echo ""
+    echo "Backend: http://localhost:8000"
+    echo "Frontend: http://localhost:3000"
+    echo "MongoDB: mongodb://localhost:27017"
+    echo ""
+    
+    # Wait for user input to stop
+    read -p "Premi ENTER per fermare l'applicazione..."
+    
+    # Stop services
+    killall node
+    killall python
+    docker stop commit-mongodb
+    docker rm commit-mongodb
+}
+
+# Start only backend
+start_backend() {
+    echo ""
+    echo -e "${GREEN}[INFO] Avvio solo Backend...${NC}"
+    cd backend
     python3 -m venv venv
-fi
+    source venv/bin/activate
+    pip install -r requirements.txt
+    python server.py
+}
 
-# Attiva ambiente virtuale
-source venv/bin/activate 2>/dev/null || . venv/Scripts/activate 2>/dev/null
+# Start only frontend
+start_frontend() {
+    echo ""
+    echo -e "${GREEN}[INFO] Avvio solo Frontend...${NC}"
+    cd frontend
+    npm install
+    npm start
+}
 
-# Installa pacchetti Python
-pip install -r requirements.txt
+# Reset database
+reset_database() {
+    echo ""
+    echo -e "${RED}[ATTENZIONE] Questo cancellerà tutti i dati del database!${NC}"
+    read -p "Sei sicuro? (s/n): " confirm
+    if [[ $confirm == "s" ]] || [[ $confirm == "S" ]]; then
+        docker-compose down -v
+        echo -e "${GREEN}[INFO] Database resettato.${NC}"
+    fi
+}
 
-echo "✅ Dipendenze backend installate"
-
-# Installa dipendenze frontend
-echo ""
-echo "Installazione dipendenze frontend..."
-cd ../frontend
-npm install
-echo "✅ Dipendenze frontend installate"
-
-# Crea file .env se non esistono
-echo ""
-echo "Controllo configurazione..."
-
-if [ ! -f "../backend/.env" ]; then
-    echo "⚠️  File backend/.env non trovato. Crealo da .env.example"
-fi
-
-if [ ! -f ".env" ]; then
-    echo "⚠️  File frontend/.env non trovato. Crealo da .env.example"
-fi
-
-# Avvia i servizi
-echo ""
-echo "======================================"
-echo "   Avvio servizi"
-echo "======================================"
-
-# Avvia MongoDB se non in esecuzione
-if ! pgrep -x "mongod" > /dev/null; then
-    echo "Avvio MongoDB..."
-    mongod --dbpath ./data &
-fi
-
-# Avvia backend
-echo "Avvio backend su http://localhost:8000..."
-cd ../backend
-source venv/bin/activate 2>/dev/null || . venv/Scripts/activate 2>/dev/null
-python server.py &
-BACKEND_PID=$!
-
-# Attendi che il backend sia pronto
-sleep 5
-
-# Avvia frontend
-echo "Avvio frontend su http://localhost:3000..."
-cd ../frontend
-npm start &
-FRONTEND_PID=$!
-
-echo ""
-echo "======================================"
-echo "   commIT avviato con successo!"
-echo "======================================"
-echo ""
-echo "🌐 Frontend: http://localhost:3000"
-echo "🔧 Backend API: http://localhost:8000"
-echo "📚 API Docs: http://localhost:8000/docs"
-echo ""
-echo "Premi Ctrl+C per arrestare tutti i servizi"
-
-# Wait for Ctrl+C
-trap 'kill $BACKEND_PID $FRONTEND_PID; exit' INT
-wait
+# Main menu loop
+while true; do
+    show_menu
+    case $choice in
+        1)
+            start_docker
+            break
+            ;;
+        2)
+            start_local
+            break
+            ;;
+        3)
+            start_backend
+            break
+            ;;
+        4)
+            start_frontend
+            break
+            ;;
+        5)
+            reset_database
+            ;;
+        0)
+            echo "Arrivederci!"
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}Opzione non valida!${NC}"
+            ;;
+    esac
+done

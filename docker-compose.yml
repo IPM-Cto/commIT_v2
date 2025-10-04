@@ -3,100 +3,87 @@ version: '3.8'
 services:
   # MongoDB Database
   mongodb:
-    image: mongo:6.0
-    container_name: commit_mongodb
-    restart: always
+    image: mongo:7.0
+    container_name: commit-mongodb
+    restart: unless-stopped
     environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
       MONGO_INITDB_DATABASE: commit
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-admin123}
-    volumes:
-      - mongodb_data:/data/db
     ports:
       - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
-      - commit_network
-
-  # Redis Cache (optional)
-  redis:
-    image: redis:7-alpine
-    container_name: commit_redis
-    restart: always
-    ports:
-      - "6379:6379"
-    networks:
-      - commit_network
+      - commit-network
 
   # Backend API
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: commit_backend
-    restart: always
+    container_name: commit-backend
+    restart: unless-stopped
     environment:
-      MONGO_URL: mongodb://admin:${MONGO_PASSWORD:-admin123}@mongodb:27017/commit?authSource=admin
-      DB_NAME: commit
-      REDIS_URL: redis://redis:6379
-      HOST: 0.0.0.0
-      PORT: 8000
-    env_file:
-      - ./backend/.env
-    volumes:
-      - ./backend:/app
+      - MONGO_URL=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/commit?authSource=admin
+      - DB_NAME=commit
+      - HOST=0.0.0.0
+      - PORT=8000
+      - CORS_ORIGINS=http://localhost:3000,http://localhost
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     ports:
       - "8000:8000"
     depends_on:
       - mongodb
-      - redis
     networks:
-      - commit_network
+      - commit-network
+    volumes:
+      - ./backend:/app
     command: uvicorn server:app --host 0.0.0.0 --port 8000 --reload
 
-  # Frontend
+  # Frontend Application
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: commit_frontend
-    restart: always
+    container_name: commit-frontend
+    restart: unless-stopped
     environment:
-      REACT_APP_API_URL: http://localhost:8000/api
-    env_file:
-      - ./frontend/.env
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - REACT_APP_API_URL=http://localhost:8000/api
+      - REACT_APP_AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - REACT_APP_AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - REACT_APP_AUTH0_REDIRECT_URI=http://localhost:3000/callback
+      - REACT_APP_AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - backend
     networks:
-      - commit_network
-    command: npm start
+      - commit-network
 
-  # Nginx Reverse Proxy (optional, for production)
-  nginx:
-    image: nginx:alpine
-    container_name: commit_nginx
-    restart: always
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  # Redis Cache (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: commit-redis
+    restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - backend
-      - frontend
+      - "6379:6379"
     networks:
-      - commit_network
-    profiles:
-      - production
+      - commit-network
+    volumes:
+      - redis_data:/data
+
+networks:
+  commit-network:
+    driver: bridge
 
 volumes:
   mongodb_data:
     driver: local
-
-networks:
-  commit_network:
-    driver: bridge
+  redis_data:
+    driver: local

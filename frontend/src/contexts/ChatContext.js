@@ -1,8 +1,7 @@
-// ChatContext.js
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 
 const ChatContext = createContext();
 
@@ -17,13 +16,11 @@ export const useChat = () => {
 export const ChatProvider = ({ children }) => {
   const { getAccessTokenSilently } = useAuth0();
   const [sessions, setSessions] = useState([]);
-  const [activeSession, setActiveSession] = useState(null);
+  const [currentSession, setCurrentSession] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  // Start a new chat session
-  const startNewSession = useCallback(async () => {
+  const startNewSession = async () => {
     try {
       setLoading(true);
       const token = await getAccessTokenSilently();
@@ -37,55 +34,45 @@ export const ChatProvider = ({ children }) => {
           },
         }
       );
-
-      const session = {
-        id: response.data.session_id,
-        startedAt: new Date(),
-        messages: [],
-      };
-
-      setSessions(prev => [...prev, session]);
-      setActiveSession(session.id);
+      
+      const newSession = response.data;
+      setSessions(prev => [...prev, newSession]);
+      setCurrentSession(newSession.session_id);
       setMessages([]);
       
-      return session.id;
-    } catch (err) {
-      console.error('Error starting chat session:', err);
-      setError(err.message);
+      return newSession;
+    } catch (error) {
+      console.error('Error starting chat session:', error);
       toast.error('Errore nell\'avvio della chat');
-      throw err;
+      throw error;
     } finally {
       setLoading(false);
     }
-  }, [getAccessTokenSilently]);
+  };
 
-  // Send a message to the AI
-  const sendMessage = useCallback(async (content, sessionId = activeSession) => {
+  const sendMessage = async (message, sessionId = currentSession) => {
     if (!sessionId) {
-      sessionId = await startNewSession();
+      const session = await startNewSession();
+      sessionId = session.session_id;
     }
-
+    
     try {
       setLoading(true);
       const token = await getAccessTokenSilently();
       
-      // Add user message to state immediately
+      // Add user message to UI immediately
       const userMessage = {
-        id: Date.now(),
         role: 'user',
-        content,
+        content: message,
         timestamp: new Date(),
-        sessionId,
       };
-      
       setMessages(prev => [...prev, userMessage]);
-
-      // Send to backend
+      
       const response = await axios.post(
         `${process.env.REACT_APP_API_URL}/chat/message`,
         {
           session_id: sessionId,
-          message: content,
+          message: message,
         },
         {
           headers: {
@@ -93,46 +80,42 @@ export const ChatProvider = ({ children }) => {
           },
         }
       );
-
-      // Add AI response
-      const aiMessage = {
-        id: Date.now() + 1,
+      
+      const aiResponse = response.data.response;
+      
+      // Add AI response to messages
+      const assistantMessage = {
         role: 'assistant',
-        content: response.data.response.content,
+        content: aiResponse.content,
         timestamp: new Date(),
-        sessionId,
-        intent: response.data.response.intent,
-        entities: response.data.response.entities,
-        suggestedActions: response.data.response.suggested_actions,
-        suggestedProviders: response.data.response.suggested_providers,
+        intent: aiResponse.intent,
+        suggested_actions: aiResponse.suggested_actions,
+        suggested_providers: aiResponse.suggested_providers,
       };
       
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages(prev => [...prev, assistantMessage]);
       
-      return aiMessage;
-    } catch (err) {
-      console.error('Error sending message:', err);
-      setError(err.message);
+      return aiResponse;
+    } catch (error) {
+      console.error('Error sending message:', error);
       
       // Add error message
       const errorMessage = {
-        id: Date.now() + 1,
         role: 'assistant',
         content: 'Mi dispiace, si è verificato un errore. Riprova tra poco.',
         timestamp: new Date(),
-        sessionId,
         isError: true,
       };
-      
       setMessages(prev => [...prev, errorMessage]);
-      throw err;
+      
+      toast.error('Errore nell\'invio del messaggio');
+      throw error;
     } finally {
       setLoading(false);
     }
-  }, [activeSession, getAccessTokenSilently, startNewSession]);
+  };
 
-  // Load chat history
-  const loadChatHistory = useCallback(async (sessionId) => {
+  const loadChatHistory = async (sessionId) => {
     try {
       setLoading(true);
       const token = await getAccessTokenSilently();
@@ -145,56 +128,62 @@ export const ChatProvider = ({ children }) => {
           },
         }
       );
-
-      const messages = response.data.messages.map(msg => ({
-        id: msg._id,
-        role: msg.role,
-        content: msg.content,
-        timestamp: new Date(msg.timestamp),
-        sessionId: msg.session_id,
-        intent: msg.intent,
-        entities: msg.entities,
-        suggestedActions: msg.suggested_actions,
-        suggestedProviders: msg.suggested_providers,
-      }));
-
-      setMessages(messages);
-      setActiveSession(sessionId);
       
-      return messages;
-    } catch (err) {
-      console.error('Error loading chat history:', err);
-      setError(err.message);
-      throw err;
+      setMessages(response.data.messages);
+      setCurrentSession(sessionId);
+      
+      return response.data.messages;
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+      toast.error('Errore nel caricamento della cronologia');
+      throw error;
     } finally {
       setLoading(false);
     }
-  }, [getAccessTokenSilently]);
+  };
 
-  // Clear current chat
-  const clearChat = useCallback(() => {
+  const clearChat = () => {
     setMessages([]);
-    setActiveSession(null);
-    setError(null);
-  }, []);
+    setCurrentSession(null);
+  };
 
-  // Get messages for current session
-  const getCurrentMessages = useCallback(() => {
-    if (!activeSession) return [];
-    return messages.filter(msg => msg.sessionId === activeSession);
-  }, [activeSession, messages]);
+  const deleteSession = async (sessionId) => {
+    try {
+      const token = await getAccessTokenSilently();
+      
+      await axios.delete(
+        `${process.env.REACT_APP_API_URL}/chat/sessions/${sessionId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      
+      setSessions(prev => prev.filter(s => s.session_id !== sessionId));
+      
+      if (currentSession === sessionId) {
+        clearChat();
+      }
+      
+      toast.success('Sessione eliminata');
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      toast.error('Errore nell\'eliminazione della sessione');
+      throw error;
+    }
+  };
 
   const value = {
     sessions,
-    activeSession,
-    messages: getCurrentMessages(),
+    currentSession,
+    messages,
     loading,
-    error,
     startNewSession,
     sendMessage,
     loadChatHistory,
     clearChat,
-    setActiveSession,
+    deleteSession,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

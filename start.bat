@@ -1,101 +1,109 @@
 @echo off
-echo ======================================
-echo    Avvio applicazione commIT
-echo ======================================
+echo ========================================
+echo   commIT - Avvio Applicazione
+echo ========================================
+echo.
 
-REM Verifica prerequisiti
-echo Controllo prerequisiti...
-
-where node >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo [ERRORE] Node.js non trovato. Installa Node.js prima di continuare.
+REM Check if Docker is running
+docker info >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERRORE] Docker non è in esecuzione!
+    echo Avvia Docker Desktop e riprova.
     pause
     exit /b 1
 )
 
-where npm >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo [ERRORE] npm non trovato. Installa npm prima di continuare.
-    pause
-    exit /b 1
+REM Check if .env files exist
+if not exist "backend\.env" (
+    echo [INFO] Creazione file .env per il backend...
+    copy backend\.env.example backend\.env
+    echo [ATTENZIONE] Configura backend\.env con le tue chiavi API!
 )
 
-where python >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo [ERRORE] Python non trovato. Installa Python 3 prima di continuare.
-    pause
-    exit /b 1
-)
-
-echo [OK] Prerequisiti verificati
-
-REM Installa dipendenze backend
-echo.
-echo Installazione dipendenze backend...
-cd backend
-
-if not exist "venv" (
-    echo Creazione ambiente virtuale Python...
-    python -m venv venv
-)
-
-REM Attiva ambiente virtuale
-call venv\Scripts\activate.bat
-
-REM Installa pacchetti Python
-pip install -r requirements.txt
-echo [OK] Dipendenze backend installate
-
-REM Installa dipendenze frontend
-echo.
-echo Installazione dipendenze frontend...
-cd ..\frontend
-call npm install
-echo [OK] Dipendenze frontend installate
-
-REM Controlla file .env
-echo.
-echo Controllo configurazione...
-
-if not exist "..\backend\.env" (
-    echo [ATTENZIONE] File backend\.env non trovato. Crealo da .env.example
-    echo Copio .env.example in .env...
-    copy ..\backend\.env.example ..\backend\.env >nul 2>nul
-)
-
-if not exist ".env" (
-    echo [ATTENZIONE] File frontend\.env non trovato. Crealo da .env.example
-    echo Copio .env.example in .env...
-    copy .env.example .env >nul 2>nul
+if not exist "frontend\.env" (
+    echo [INFO] Creazione file .env per il frontend...
+    copy frontend\.env.example frontend\.env
+    echo [ATTENZIONE] Configura frontend\.env con le tue chiavi API!
 )
 
 echo.
-echo ======================================
-echo    Avvio servizi
-echo ======================================
+echo [1] Avvio con Docker Compose (Raccomandato)
+echo [2] Avvio locale (Development)
+echo [3] Solo Backend
+echo [4] Solo Frontend
+echo [5] Reset Database
+echo [0] Esci
+echo.
+set /p choice="Scegli opzione: "
 
-REM Avvia backend in una nuova finestra
-echo Avvio backend su http://localhost:8000...
-cd ..\backend
-start "commIT Backend" cmd /k "venv\Scripts\activate && python server.py"
+if "%choice%"=="1" goto docker
+if "%choice%"=="2" goto local
+if "%choice%"=="3" goto backend
+if "%choice%"=="4" goto frontend
+if "%choice%"=="5" goto reset
+if "%choice%"=="0" goto exit
 
-REM Attendi che il backend sia pronto
+:docker
+echo.
+echo [INFO] Avvio con Docker Compose...
+docker-compose up --build
+goto end
+
+:local
+echo.
+echo [INFO] Avvio locale in modalità development...
+echo.
+echo [INFO] Avvio MongoDB...
+start cmd /k "docker run -p 27017:27017 --name commit-mongodb -d mongo:7.0"
 timeout /t 5 /nobreak >nul
 
-REM Avvia frontend in una nuova finestra
-echo Avvio frontend su http://localhost:3000...
-cd ..\frontend
-start "commIT Frontend" cmd /k "npm start"
+echo [INFO] Avvio Backend...
+start cmd /k "cd backend && python -m venv venv && venv\Scripts\activate && pip install -r requirements.txt && python server.py"
+timeout /t 5 /nobreak >nul
+
+echo [INFO] Avvio Frontend...
+start cmd /k "cd frontend && npm install && npm start"
 
 echo.
-echo ======================================
-echo    commIT avviato con successo!
-echo ======================================
+echo [SUCCESS] Applicazione avviata!
 echo.
+echo Backend: http://localhost:8000
 echo Frontend: http://localhost:3000
-echo Backend API: http://localhost:8000
-echo API Docs: http://localhost:8000/docs
+echo MongoDB: mongodb://localhost:27017
 echo.
-echo Chiudi le finestre dei terminali per arrestare i servizi
+goto end
+
+:backend
 echo.
+echo [INFO] Avvio solo Backend...
+cd backend
+python -m venv venv
+call venv\Scripts\activate
+pip install -r requirements.txt
+python server.py
+goto end
+
+:frontend
+echo.
+echo [INFO] Avvio solo Frontend...
+cd frontend
+npm install
+npm start
+goto end
+
+:reset
+echo.
+echo [ATTENZIONE] Questo cancellerà tutti i dati del database!
+set /p confirm="Sei sicuro? (s/n): "
+if /i "%confirm%"=="s" (
+    docker-compose down -v
+    echo [INFO] Database resettato.
+)
+goto end
+
+:exit
+echo Arrivederci!
+exit /b 0
+
+:end
 pause
